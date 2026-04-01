@@ -72,9 +72,19 @@ class UserService extends BaseService {
     await this.ensureEmailAvailable(normalizedEmail);
 
     const passwordHash = await hashPassword(payload.password);
-    const role = USER_ROLE_VALUES.includes(payload.role)
-      ? payload.role
-      : USER_ROLES.VIEWER;
+
+    let role;
+    if (
+      payload.role === undefined ||
+      payload.role === null ||
+      payload.role === ""
+    ) {
+      role = USER_ROLES.VIEWER;
+    } else if (USER_ROLE_VALUES.includes(payload.role)) {
+      role = payload.role;
+    } else {
+      throw buildError(`Role '${payload.role}' does not exist.`, 400);
+    }
 
     const userPayload = {
       email: normalizedEmail,
