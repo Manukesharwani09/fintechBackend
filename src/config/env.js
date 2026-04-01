@@ -15,6 +15,8 @@ const config = {
   isProduction: (process.env.NODE_ENV || "").toLowerCase() === "production",
   port: Number(process.env.PORT) || 4000,
   corsAllowedOrigins: parseCsv(process.env.CORS_ALLOWED_ORIGINS || ""),
+  mongoUri:
+    process.env.MONGO_URI || "mongodb://127.0.0.1:27017/finance_dashboard",
 };
 
 export default config;

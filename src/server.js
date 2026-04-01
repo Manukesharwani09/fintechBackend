@@ -3,22 +3,31 @@ import { fileURLToPath } from "url";
 
 import app from "./app.js";
 import config from "./config/env.js";
+import { connectDatabase, disconnectDatabase } from "./config/database.js";
 
 const server = http.createServer(app);
 
-const startServer = () => {
-  server.listen(config.port, () => {
-    console.log(
-      `API server listening on port ${config.port} in ${config.nodeEnv} mode`,
-    );
-  });
+const startServer = async () => {
+  try {
+    await connectDatabase();
+    server.listen(config.port, () => {
+      console.log(
+        `API server listening on port ${config.port} in ${config.nodeEnv} mode`,
+      );
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
 };
 
 const gracefulShutdown = (signal) => {
   console.log(`${signal} received. Closing server gracefully.`);
   server.close(() => {
     console.log("HTTP server closed.");
-    process.exit(0);
+    disconnectDatabase()
+      .catch((err) => console.error("Error during Mongo disconnect:", err))
+      .finally(() => process.exit(0));
   });
 
   setTimeout(() => {
