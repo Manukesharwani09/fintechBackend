@@ -17,6 +17,9 @@ const buildError = (message, statusCode) => {
   return error;
 };
 
+const normalizeText = (value) =>
+  typeof value === "string" ? value.trim() || undefined : undefined;
+
 class UserService extends BaseService {
   constructor() {
     super(User);
@@ -41,13 +44,23 @@ class UserService extends BaseService {
   }
 
   async ensureEmailAvailable(email) {
-    const existing = await this.findByEmail(email, {
-      projection: "_id",
-      lean: true,
-    });
-    if (existing) {
-      throw buildError("Email is already registered", 409);
+    const existing = await this.model
+      .findOne({ email: email?.trim().toLowerCase() })
+      .withDeleted()
+      .select("_id isDeleted");
+
+    if (!existing) {
+      return;
     }
+
+    if (existing.isDeleted) {
+      throw buildError(
+        "An account with this email exists but is deactivated. Please contact support to restore it.",
+        409,
+      );
+    }
+
+    throw buildError("Email is already registered", 409);
   }
 
   async registerUser(payload) {
@@ -68,13 +81,22 @@ class UserService extends BaseService {
       passwordHash,
       role,
       profile: {
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-        timezone: payload.timezone,
+        firstName: normalizeText(payload.firstName),
+        lastName: normalizeText(payload.lastName),
+        timezone: normalizeText(payload.timezone),
       },
     };
 
-    const user = await this.create(userPayload);
+    let user;
+    try {
+      user = await this.create(userPayload);
+    } catch (error) {
+      if (error?.code === 11000) {
+        // Unique index catch-all in case of race condition between availability check and insert
+        throw buildError("Email is already registered", 409);
+      }
+      throw error;
+    }
     const tokens = await this.issueAuthTokens(user);
     return {
       user: this.sanitizeUser(user),
@@ -92,17 +114,19 @@ class UserService extends BaseService {
       .findOne({ email: normalizedEmail, isDeleted: false })
       .select("+passwordHash +refreshTokenHash");
 
+    const invalidCredentials = () => buildError("Invalid credentials", 401);
+
     if (!user) {
-      throw buildError("Invalid email or password", 401);
+      throw invalidCredentials();
     }
 
     if (user.status !== USER_STATUS.ACTIVE) {
-      throw buildError("User is not active", 403);
+      throw invalidCredentials();
     }
 
     const passwordMatches = await verifyPassword(password, user.passwordHash);
     if (!passwordMatches) {
-      throw buildError("Invalid email or password", 401);
+      throw invalidCredentials();
     }
 
     return user;
@@ -110,6 +134,12 @@ class UserService extends BaseService {
 
   async loginUser(email, password) {
     const user = await this.validateCredentials(email, password);
+    const now = new Date();
+    await this.model.updateOne(
+      { _id: user._id },
+      { $set: { lastLoginAt: now } },
+    );
+    user.lastLoginAt = now;
     const tokens = await this.issueAuthTokens(user);
     return {
       user: this.sanitizeUser(user),
@@ -187,7 +217,7 @@ class UserService extends BaseService {
 
     const user = await this.model
       .findOne({ _id: payload.sub, isDeleted: false })
-      .select("+refreshTokenHash");
+      .select("+refreshTokenHash status");
 
     if (!user || !user.refreshTokenHash) {
       throw buildError("Unauthorized", 401);
@@ -200,6 +230,10 @@ class UserService extends BaseService {
 
     if (user.refreshTokenExpiresAt && user.refreshTokenExpiresAt < new Date()) {
       throw buildError("Refresh token expired", 401);
+    }
+
+    if (user.status !== USER_STATUS.ACTIVE) {
+      throw buildError("Unauthorized", 401);
     }
 
     const tokens = await this.issueAuthTokens(user);

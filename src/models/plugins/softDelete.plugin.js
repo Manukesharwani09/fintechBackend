@@ -8,15 +8,16 @@ const markOptionsProcessed = (query) => {
   }
 };
 
+//For all major query operations (find, findOne, update, etc.), it automatically filters out documents where isDeleted is true, unless you use withDeleted().
 const applySoftDeleteFilter = function applySoftDeleteFilter(next) {
   const options = this.getOptions() || {};
   if (!options[SOFT_DELETE_FILTER_KEY]) {
     this.where({ isDeleted: { $ne: true } });
   }
   markOptionsProcessed(this);
-  next();
 };
 
+// add field isDeleted and deletedAt to the schema, and add methods for soft deleting and restoring documents
 const softDeletePlugin = (schema) => {
   schema.add({
     isDeleted: {
