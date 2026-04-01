@@ -15,6 +15,17 @@ const userDefinition = {
   passwordHash: {
     type: String,
     required: true,
+    select: false,
+  },
+  refreshTokenHash: {
+    type: String,
+    default: null,
+    select: false,
+  },
+  refreshTokenExpiresAt: {
+    type: Date,
+    default: null,
+    select: false,
   },
   role: {
     type: String,
