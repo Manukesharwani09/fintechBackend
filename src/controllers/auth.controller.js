@@ -54,7 +54,7 @@ const validateLoginInput = (body) => {
 };
 
 const register = asyncHandler(async (req, res) => {
-  const { email, password, firstName, lastName, timezone, role } = req.body;
+  const { email, password, firstName, lastName, timezone } = req.body;
 
   validateRegistrationInput(req.body);
 
@@ -64,7 +64,6 @@ const register = asyncHandler(async (req, res) => {
     firstName,
     lastName,
     timezone,
-    role,
   });
 
   attachAuthCookies(res, tokens);
