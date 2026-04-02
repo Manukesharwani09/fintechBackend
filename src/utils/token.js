@@ -39,11 +39,17 @@ const verifyRefreshToken = (token) => {
   return jwt.verify(token, config.jwt.refreshSecret);
 };
 
+const verifyAccessToken = (token) => {
+  assertSecrets();
+  return jwt.verify(token, config.jwt.secret);
+};
+
 const decodeRefreshToken = (token) => jwt.decode(token);
 
 export {
   generateAccessToken,
   generateRefreshToken,
+  verifyAccessToken,
   verifyRefreshToken,
   decodeRefreshToken,
 };
