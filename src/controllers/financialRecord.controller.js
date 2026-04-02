@@ -31,7 +31,7 @@ const createRecord = asyncHandler(async (req, res) => {
     throw badRequest("occurredAt must be a valid date");
   }
 
-  const record = await financialRecordService.createForUser(req.user.id, {
+  const record = await financialRecordService.createRecord({
     amount,
     type,
     category,
@@ -75,7 +75,7 @@ const getAllRecords = asyncHandler(async (req, res) => {
     throw badRequest("endDate must be a valid date");
   }
 
-  const result = await financialRecordService.listByUser(req.user.id, {
+  const result = await financialRecordService.listRecords({
     page: Number(page),
     limit: Number(limit),
     type,
@@ -95,10 +95,7 @@ const getRecordById = asyncHandler(async (req, res) => {
     throw badRequest("Invalid record id");
   }
 
-  const record = await financialRecordService.getByIdForUser(
-    req.params.id,
-    req.user.id,
-  );
+  const record = await financialRecordService.getRecordById(req.params.id);
 
   res.status(200).json({ data: record });
 });
@@ -148,11 +145,7 @@ const updateRecord = asyncHandler(async (req, res) => {
     throw badRequest("occurredAt must be a valid date");
   }
 
-  const updated = await financialRecordService.updateByIdForUser(
-    req.params.id,
-    req.user.id,
-    payload,
-  );
+  const updated = await financialRecordService.updateRecordById(req.params.id, payload);
 
   res.status(200).json({
     data: updated,
@@ -165,10 +158,7 @@ const deleteRecord = asyncHandler(async (req, res) => {
     throw badRequest("Invalid record id");
   }
 
-  await financialRecordService.softDeleteByIdForUser(
-    req.params.id,
-    req.user.id,
-  );
+  await financialRecordService.softDeleteRecordById(req.params.id);
 
   res.status(200).json({
     message: "Record deleted successfully",
@@ -180,10 +170,7 @@ const restoreRecord = asyncHandler(async (req, res) => {
     throw badRequest("Invalid record id");
   }
 
-  const restored = await financialRecordService.restoreByIdForUser(
-    req.params.id,
-    req.user.id,
-  );
+  const restored = await financialRecordService.restoreRecordById(req.params.id);
 
   res.status(200).json({
     data: restored,

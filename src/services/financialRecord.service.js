@@ -15,9 +15,8 @@ class FinancialRecordService extends BaseService {
     super(FinancialRecord);
   }
 
-  async createForUser(userId, payload) {
+  async createRecord(payload) {
     return this.create({
-      user: userId,
       amount: payload.amount,
       type: payload.type,
       category: normalizeCategory(payload.category),
@@ -26,10 +25,10 @@ class FinancialRecordService extends BaseService {
     });
   }
 
-  async listByUser(userId, params = {}) {
+  async listRecords(params = {}) {
     const { page = 1, limit = 10, type, category, startDate, endDate } = params;
 
-    const filter = { user: userId };
+    const filter = {};
 
     if (type) {
       filter.type = type;
@@ -56,15 +55,15 @@ class FinancialRecordService extends BaseService {
     });
   }
 
-  async getByIdForUser(recordId, userId) {
-    const record = await this.findOne({ _id: recordId, user: userId });
+  async getRecordById(recordId) {
+    const record = await this.findOne({ _id: recordId });
     if (!record) {
       throw buildError("Record not found", 404);
     }
     return record;
   }
 
-  async updateByIdForUser(recordId, userId, payload) {
+  async updateRecordById(recordId, payload) {
     const updates = {};
 
     if (payload.amount !== undefined) {
@@ -88,7 +87,7 @@ class FinancialRecordService extends BaseService {
     }
 
     const record = await this.model.findOneAndUpdate(
-      { _id: recordId, user: userId, isDeleted: false },
+      { _id: recordId, isDeleted: false },
       { $set: updates },
       { new: true, runValidators: true },
     );
@@ -100,9 +99,9 @@ class FinancialRecordService extends BaseService {
     return record;
   }
 
-  async softDeleteByIdForUser(recordId, userId) {
+  async softDeleteRecordById(recordId) {
     const result = await this.model.findOneAndUpdate(
-      { _id: recordId, user: userId, isDeleted: false },
+      { _id: recordId, isDeleted: false },
       { $set: { isDeleted: true, deletedAt: new Date() } },
       { new: true },
     );
@@ -114,9 +113,9 @@ class FinancialRecordService extends BaseService {
     return result;
   }
 
-  async restoreByIdForUser(recordId, userId) {
+  async restoreRecordById(recordId) {
     const result = await this.model.findOneAndUpdate(
-      { _id: recordId, user: userId, isDeleted: true },
+      { _id: recordId, isDeleted: true },
       { $set: { isDeleted: false, deletedAt: null } },
       { new: true, includeDeleted: true },
     );
