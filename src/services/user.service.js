@@ -99,6 +99,7 @@ class UserService extends BaseService {
         timezone: normalizeText(payload.timezone),
       },
     };
+    console.log("Registering user with payload:", userPayload.role);
 
     let user;
     try {

@@ -5,11 +5,7 @@ import {
   clearAuthCookies,
   extractRefreshToken,
 } from "../utils/cookies.js";
-import {
-  isValidEmail,
-  isStrongPassword,
-  isValidOptionalString,
-} from "../utils/validation.js";
+import { isValidEmail } from "../utils/validation.js";
 
 const badRequest = (message) => {
   const error = new Error(message);
@@ -17,25 +13,9 @@ const badRequest = (message) => {
   return error;
 };
 
-const validateRegistrationInput = (body) => {
-  if (!isValidEmail(body.email)) {
-    throw badRequest("Please provide a valid email address.");
-  }
-
-  if (!isStrongPassword(body.password)) {
-    throw badRequest(
-      "Password must be at least 8 characters and include letters and numbers.",
-    );
-  }
-
-  [
-    [body.firstName, "First name"],
-    [body.lastName, "Last name"],
-    [body.timezone, "Timezone"],
-  ].forEach(([value, label]) => {
-    if (!isValidOptionalString(value, { maxLength: 120 })) {
-      throw badRequest(`${label} must be a string up to 120 characters.`);
-    }
+const registrationDisabled = (_req, res) => {
+  res.status(403).json({
+    message: "Registration is disabled. Please contact an administrator.",
   });
 };
 
@@ -52,27 +32,6 @@ const validateLoginInput = (body) => {
     throw badRequest("Password must be between 8 and 128 characters.");
   }
 };
-
-const register = asyncHandler(async (req, res) => {
-  const { email, password, firstName, lastName, timezone } = req.body;
-
-  validateRegistrationInput(req.body);
-
-  const { user, tokens } = await userService.registerUser({
-    email,
-    password,
-    firstName,
-    lastName,
-    timezone,
-  });
-
-  attachAuthCookies(res, tokens);
-
-  res.status(201).json({
-    data: { user },
-    message: "Registration successful",
-  });
-});
 
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -113,7 +72,7 @@ const logout = asyncHandler(async (req, res) => {
 });
 
 export default {
-  register,
+  registrationDisabled,
   login,
   refreshSession,
   logout,
