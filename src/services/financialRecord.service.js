@@ -1,13 +1,33 @@
 import BaseService from "./base.service.js";
 import FinancialRecord from "../models/financialRecord.model.js";
 
+const buildError = (message, statusCode) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
+
+const normalizeCategory = (category) =>
+  typeof category === "string" ? category.trim().toLowerCase() : category;
+
 class FinancialRecordService extends BaseService {
   constructor() {
     super(FinancialRecord);
   }
 
-  listByUser(userId, params = {}) {
-    const { page = 1, limit = 25, type, category, startDate, endDate } = params;
+  async createForUser(userId, payload) {
+    return this.create({
+      user: userId,
+      amount: payload.amount,
+      type: payload.type,
+      category: normalizeCategory(payload.category),
+      description: payload.description,
+      occurredAt: payload.occurredAt,
+    });
+  }
+
+  async listByUser(userId, params = {}) {
+    const { page = 1, limit = 10, type, category, startDate, endDate } = params;
 
     const filter = { user: userId };
 
@@ -16,7 +36,7 @@ class FinancialRecordService extends BaseService {
     }
 
     if (category) {
-      filter.category = category;
+      filter.category = normalizeCategory(category);
     }
 
     if (startDate || endDate) {
@@ -34,6 +54,78 @@ class FinancialRecordService extends BaseService {
       limit,
       sort: { occurredAt: -1, createdAt: -1 },
     });
+  }
+
+  async getByIdForUser(recordId, userId) {
+    const record = await this.findOne({ _id: recordId, user: userId });
+    if (!record) {
+      throw buildError("Record not found", 404);
+    }
+    return record;
+  }
+
+  async updateByIdForUser(recordId, userId, payload) {
+    const updates = {};
+
+    if (payload.amount !== undefined) {
+      updates.amount = payload.amount;
+    }
+    if (payload.type !== undefined) {
+      updates.type = payload.type;
+    }
+    if (payload.category !== undefined) {
+      updates.category = normalizeCategory(payload.category);
+    }
+    if (payload.description !== undefined) {
+      updates.description = payload.description;
+    }
+    if (payload.occurredAt !== undefined) {
+      updates.occurredAt = payload.occurredAt;
+    }
+
+    if (!Object.keys(updates).length) {
+      throw buildError("No fields provided for update", 400);
+    }
+
+    const record = await this.model.findOneAndUpdate(
+      { _id: recordId, user: userId, isDeleted: false },
+      { $set: updates },
+      { new: true, runValidators: true },
+    );
+
+    if (!record) {
+      throw buildError("Record not found", 404);
+    }
+
+    return record;
+  }
+
+  async softDeleteByIdForUser(recordId, userId) {
+    const result = await this.model.findOneAndUpdate(
+      { _id: recordId, user: userId, isDeleted: false },
+      { $set: { isDeleted: true, deletedAt: new Date() } },
+      { new: true },
+    );
+
+    if (!result) {
+      throw buildError("Record not found", 404);
+    }
+
+    return result;
+  }
+
+  async restoreByIdForUser(recordId, userId) {
+    const result = await this.model.findOneAndUpdate(
+      { _id: recordId, user: userId, isDeleted: true },
+      { $set: { isDeleted: false, deletedAt: null } },
+      { new: true, includeDeleted: true },
+    );
+
+    if (!result) {
+      throw buildError("Record not found", 404);
+    }
+
+    return result;
   }
 }
 
