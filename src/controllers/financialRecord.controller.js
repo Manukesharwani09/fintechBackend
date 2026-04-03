@@ -90,6 +90,46 @@ const getAllRecords = asyncHandler(async (req, res) => {
   });
 });
 
+const getAllRecordsForViewer = asyncHandler(async (req, res) => {
+  const {
+    page = "1",
+    limit = "10",
+    type,
+    category,
+    startDate,
+    endDate,
+  } = req.query;
+
+  if (
+    type !== undefined ||
+    category !== undefined ||
+    startDate !== undefined ||
+    endDate !== undefined
+  ) {
+    throw badRequest(
+      "Viewer endpoint does not allow filters: type, category, startDate, endDate",
+    );
+  }
+
+  if (Number.isNaN(Number(page)) || Number(page) < 1) {
+    throw badRequest("page must be a number greater than or equal to 1");
+  }
+
+  if (Number.isNaN(Number(limit)) || Number(limit) < 1) {
+    throw badRequest("limit must be a number greater than or equal to 1");
+  }
+
+  const result = await financialRecordService.listRecords({
+    page: Number(page),
+    limit: Number(limit),
+  });
+
+  res.status(200).json({
+    data: result.items,
+    meta: result.meta,
+  });
+});
+
 const getRecordById = asyncHandler(async (req, res) => {
   if (!isValidObjectId(req.params.id)) {
     throw badRequest("Invalid record id");
@@ -145,7 +185,10 @@ const updateRecord = asyncHandler(async (req, res) => {
     throw badRequest("occurredAt must be a valid date");
   }
 
-  const updated = await financialRecordService.updateRecordById(req.params.id, payload);
+  const updated = await financialRecordService.updateRecordById(
+    req.params.id,
+    payload,
+  );
 
   res.status(200).json({
     data: updated,
@@ -170,7 +213,9 @@ const restoreRecord = asyncHandler(async (req, res) => {
     throw badRequest("Invalid record id");
   }
 
-  const restored = await financialRecordService.restoreRecordById(req.params.id);
+  const restored = await financialRecordService.restoreRecordById(
+    req.params.id,
+  );
 
   res.status(200).json({
     data: restored,
@@ -181,6 +226,7 @@ const restoreRecord = asyncHandler(async (req, res) => {
 export default {
   createRecord,
   getAllRecords,
+  getAllRecordsForViewer,
   getRecordById,
   updateRecord,
   deleteRecord,
