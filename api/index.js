@@ -45,9 +45,9 @@ app.use(async (_req, _res, next) => {
   }
 });
 
-app.use("/api/v1/auth", authRateLimiter);
-app.use("/api/v1", globalRateLimiter);
-app.use("/api/v1", routes);
+app.use("/v1/auth", authRateLimiter);
+app.use("/v1", globalRateLimiter);
+app.use("/v1", routes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
