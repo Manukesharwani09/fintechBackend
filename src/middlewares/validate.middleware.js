@@ -52,9 +52,9 @@ const validateRequest =
       return next(badRequest(errors));
     }
 
-    req.body = bodyResult.data;
-    req.params = paramsResult.data;
-    req.query = queryResult.data;
+    Object.assign(req.body || (req.body = {}), bodyResult.data);
+    Object.assign(req.params || (req.params = {}), paramsResult.data);
+    Object.assign(req.query || (req.query = {}), queryResult.data);
 
     return next();
   };
