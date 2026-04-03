@@ -5,13 +5,6 @@ import {
   clearAuthCookies,
   extractRefreshToken,
 } from "../utils/cookies.js";
-import { isValidEmail } from "../utils/validation.js";
-
-const badRequest = (message) => {
-  const error = new Error(message);
-  error.statusCode = 400;
-  return error;
-};
 
 const registrationDisabled = (_req, res) => {
   res.status(403).json({
@@ -19,24 +12,8 @@ const registrationDisabled = (_req, res) => {
   });
 };
 
-const validateLoginInput = (body) => {
-  if (!isValidEmail(body.email)) {
-    throw badRequest("Please provide a valid email address.");
-  }
-
-  if (
-    typeof body.password !== "string" ||
-    body.password.length < 8 ||
-    body.password.length > 128
-  ) {
-    throw badRequest("Password must be between 8 and 128 characters.");
-  }
-};
-
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-
-  validateLoginInput(req.body);
 
   const { user, tokens } = await userService.loginUser(email, password);
   attachAuthCookies(res, tokens);

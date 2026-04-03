@@ -1,3 +1,5 @@
+import { ZodError } from "zod";
+
 const badRequest = (errors) => {
   const error = new Error("Validation failed");
   error.statusCode = 400;
@@ -5,46 +7,54 @@ const badRequest = (errors) => {
   return error;
 };
 
-const runValidation = (validator, source, label) => {
-  if (!validator) {
-    return [];
+const formatIssues = (zodError, scope) =>
+  zodError.issues.map((issue) => {
+    const path = issue.path.length ? `${scope}.${issue.path.join(".")}` : scope;
+    return {
+      field: path,
+      message: issue.message,
+      code: issue.code,
+    };
+  });
+
+const parseWithSchema = (schema, payload, scope) => {
+  if (!schema) {
+    return { data: payload, errors: [] };
   }
 
-  const result = validator(source);
-  if (result === true || result === undefined || result === null) {
-    return [];
+  const result = schema.safeParse(payload);
+  if (result.success) {
+    return { data: result.data, errors: [] };
   }
 
-  if (typeof result === "string") {
-    return [{ field: label, message: result }];
-  }
+  const zodError =
+    result.error instanceof ZodError
+      ? result.error
+      : new ZodError(result.error?.issues || []);
 
-  if (Array.isArray(result)) {
-    return result.map((entry) =>
-      typeof entry === "string"
-        ? { field: label, message: entry }
-        : {
-            field: entry.field || label,
-            message: entry.message || "Invalid value",
-          },
-    );
-  }
-
-  return [{ field: label, message: "Invalid request" }];
+  return { data: payload, errors: formatIssues(zodError, scope) };
 };
 
 const validateRequest =
   (schema = {}) =>
   (req, _res, next) => {
+    const bodyResult = parseWithSchema(schema.body, req.body, "body");
+    const paramsResult = parseWithSchema(schema.params, req.params, "params");
+    const queryResult = parseWithSchema(schema.query, req.query, "query");
+
     const errors = [
-      ...runValidation(schema.body, req.body, "body"),
-      ...runValidation(schema.params, req.params, "params"),
-      ...runValidation(schema.query, req.query, "query"),
+      ...bodyResult.errors,
+      ...paramsResult.errors,
+      ...queryResult.errors,
     ];
 
     if (errors.length) {
       return next(badRequest(errors));
     }
+
+    req.body = bodyResult.data;
+    req.params = paramsResult.data;
+    req.query = queryResult.data;
 
     return next();
   };
