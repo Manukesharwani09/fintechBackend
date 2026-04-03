@@ -1,5 +1,3 @@
-// Simple health check endpoint for deployment troubleshooting
-app.get("/v1/ping", (req, res) => res.json({ message: "pong" }));
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -17,6 +15,9 @@ import {
 import { connectDatabase } from "../src/config/database.js";
 
 const app = express();
+
+// Simple health check endpoint for deployment troubleshooting
+app.get("/api/v1/ping", (_req, res) => res.json({ message: "pong" }));
 
 const allowedOrigins = config.corsAllowedOrigins;
 const corsOptions = allowedOrigins.length
@@ -47,13 +48,11 @@ app.use(async (_req, _res, next) => {
   }
 });
 
-app.use("/v1/auth", authRateLimiter);
-app.use("/v1", globalRateLimiter);
-app.use("/v1", routes);
+app.use("/api/v1/auth", authRateLimiter);
+app.use("/api/v1", globalRateLimiter);
+app.use("/api/v1", routes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-module.exports = (req, res) => {
-  app(req, res);
-};
+export default app;
