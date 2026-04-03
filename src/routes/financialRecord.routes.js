@@ -1,5 +1,4 @@
 import { Router } from "express";
-
 import financialRecordController from "../controllers/financialRecord.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
 import { authorizeRoles } from "../middlewares/rbac.middleware.js";

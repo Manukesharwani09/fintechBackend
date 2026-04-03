@@ -4,6 +4,7 @@ import userRoutes from "./user.routes.js";
 import authRoutes from "./auth.routes.js";
 import financialRecordRoutes from "./financialRecord.routes.js";
 import dashboardRoutes from "./dashboard.routes.js";
+import insightRoutes from "./insight.routes.js";
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.use("/users", userRoutes);
 router.use("/auth", authRoutes);
 router.use("/records", financialRecordRoutes);
 router.use("/dashboard", dashboardRoutes);
+router.use("/insights", insightRoutes);
 
 export default router;
