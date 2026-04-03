@@ -7,6 +7,15 @@ import {
   optionalDateString,
 } from "./common.validator.js";
 
+const recordSortFields = [
+  "amount",
+  "occurredAt",
+  "category",
+  "type",
+  "createdAt",
+  "updatedAt",
+];
+
 const recordIdParamsSchema = z.object({
   id: objectIdSchema,
 });
@@ -58,6 +67,10 @@ const listRecordsQuerySchema = z.object({
     .optional(),
   startDate: optionalDateString("startDate"),
   endDate: optionalDateString("endDate"),
+  search: z.string().trim().min(1).max(120).optional(),
+  q: z.string().trim().min(1).max(120).optional(),
+  sortBy: z.enum(recordSortFields).optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
 });
 
 const viewerListRecordsQuerySchema = z

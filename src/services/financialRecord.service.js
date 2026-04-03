@@ -10,6 +10,9 @@ const buildError = (message, statusCode) => {
 const normalizeCategory = (category) =>
   typeof category === "string" ? category.trim().toLowerCase() : category;
 
+const escapeRegex = (value = "") =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 class FinancialRecordService extends BaseService {
   constructor() {
     super(FinancialRecord);
@@ -26,7 +29,18 @@ class FinancialRecordService extends BaseService {
   }
 
   async listRecords(params = {}) {
-    const { page = 1, limit = 10, type, category, startDate, endDate } = params;
+    const {
+      page = 1,
+      limit = 10,
+      type,
+      category,
+      startDate,
+      endDate,
+      search,
+      q,
+      sortBy,
+      sortOrder = "desc",
+    } = params;
 
     const filter = {};
 
@@ -48,10 +62,25 @@ class FinancialRecordService extends BaseService {
       }
     }
 
+    const searchTerm = (search || q || "").trim();
+    if (searchTerm) {
+      const regex = new RegExp(escapeRegex(searchTerm), "i");
+      filter.$or = [
+        { description: regex },
+        { category: regex },
+        { notes: regex },
+        { "metadata.notes": regex },
+      ];
+    }
+
+    const sort = sortBy
+      ? { [sortBy]: sortOrder === "asc" ? 1 : -1, createdAt: -1 }
+      : { occurredAt: -1, createdAt: -1 };
+
     return this.paginate(filter, {
       page,
       limit,
-      sort: { occurredAt: -1, createdAt: -1 },
+      sort,
     });
   }
 

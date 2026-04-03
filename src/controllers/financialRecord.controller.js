@@ -19,7 +19,18 @@ const createRecord = asyncHandler(async (req, res) => {
 });
 
 const getAllRecords = asyncHandler(async (req, res) => {
-  const { page, limit, type, category, startDate, endDate } = req.query;
+  const {
+    page,
+    limit,
+    type,
+    category,
+    startDate,
+    endDate,
+    search,
+    q,
+    sortBy,
+    sortOrder,
+  } = req.query;
 
   const result = await financialRecordService.listRecords({
     page,
@@ -28,6 +39,10 @@ const getAllRecords = asyncHandler(async (req, res) => {
     category,
     startDate,
     endDate,
+    search,
+    q,
+    sortBy,
+    sortOrder,
   });
 
   res.status(200).json({
