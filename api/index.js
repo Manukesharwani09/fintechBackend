@@ -52,4 +52,6 @@ app.use("/api/v1", routes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-export default app;
+export default function handler(req, res) {
+  app(req, res);
+}
