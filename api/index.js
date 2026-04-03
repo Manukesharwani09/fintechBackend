@@ -1,3 +1,5 @@
+// Simple health check endpoint for deployment troubleshooting
+app.get("/v1/ping", (req, res) => res.json({ message: "pong" }));
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -52,6 +54,6 @@ app.use("/v1", routes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-export default function handler(req, res) {
+module.exports = (req, res) => {
   app(req, res);
-}
+};
