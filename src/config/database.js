@@ -16,8 +16,12 @@ const connectDatabase = async () => {
   }
 
   try {
-    await mongoose.connect(config.mongoUri, connectionOptions);
+    const mongooseInstance = await mongoose.connect(
+      config.mongoUri,
+      connectionOptions,
+    );
     console.log("MongoDB connection established");
+    return mongooseInstance.connection;
   } catch (error) {
     console.error("MongoDB connection error:", error.message);
     throw error;
@@ -25,7 +29,9 @@ const connectDatabase = async () => {
 };
 
 const disconnectDatabase = async () => {
-  await mongoose.connection.close();
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.close();
+  }
 };
 
 mongoose.connection.on("error", (err) => {
