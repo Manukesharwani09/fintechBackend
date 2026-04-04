@@ -250,20 +250,61 @@ All endpoints require authentication. Most require Analyst or Admin role. Viewer
 "message": "Record created successfully"
 }
 
-```
+````
 
 ### 2. Get All Records
+
 **GET** `/api/v1/records`
-- **Description:** List all financial records for the authenticated user. Supports filters: type, category, startDate, endDate, page, limit.
+- **Description:** List all financial records for the authenticated user. Supports advanced search, flexible filters, sorting, and pagination. Excludes soft-deleted records by default.
 - **Access:** Analyst, Admin
-**Example Request:**
-`GET /api/v1/records?type=expense&category=food&startDate=2026-03-01&endDate=2026-03-31&page=1&limit=10`
-**Example Response:**
+
+#### Query Parameters
+| Name         | Type     | Description                                                                                 |
+|--------------|----------|---------------------------------------------------------------------------------------------|
+| `type`       | string   | Filter by record type (`income` or `expense`)                                                |
+| `category`   | string   | Filter by category (case-insensitive)                                                        |
+| `startDate`  | string   | Filter records occurred on or after this date (YYYY-MM-DD)                                   |
+| `endDate`    | string   | Filter records occurred on or before this date (YYYY-MM-DD)                                  |
+| `search`     | string   | Full-text search in description, category, notes, and metadata.notes                         |
+| `q`          | string   | Alias for `search`                                                                           |
+| `sortBy`     | string   | Field to sort by (e.g., `occurredAt`, `amount`, `category`, `createdAt`)                    |
+| `sortOrder`  | string   | Sort order: `asc` or `desc` (default: `desc`)                                                |
+| `page`       | integer  | Page number for pagination (default: 1)                                                      |
+| `limit`      | integer  | Number of records per page (default: 10)                                                     |
+
+#### Example Requests
+
+1. **Basic filter by type and category:**
+  `GET /api/v1/records?type=expense&category=food`
+
+2. **Date range and pagination:**
+  `GET /api/v1/records?startDate=2026-03-01&endDate=2026-03-31&page=2&limit=5`
+
+3. **Full-text search:**
+  `GET /api/v1/records?search=salary`
+
+4. **Advanced sort:**
+  `GET /api/v1/records?sortBy=amount&sortOrder=asc`
+
+5. **Combined search, filter, and sort:**
+  `GET /api/v1/records?type=income&search=bonus&sortBy=occurredAt&sortOrder=desc&page=1&limit=20`
+
+#### Example Response
+```json
 {
-	"data": [ { "_id": "...", "amount": 100, ... } ],
-	"meta": { "page": 1, "limit": 10, "total": 5 }
+  "data": [
+   { "_id": "...", "amount": 100, "type": "expense", "category": "food", ... }
+  ],
+  "meta": { "page": 1, "limit": 10, "total": 5 }
 }
-```
+````
+
+#### Notes
+
+- Only users with Analyst or Admin role can access this endpoint.
+- All queries exclude soft-deleted records (`isDeleted: true`).
+- Search is case-insensitive and matches across multiple fields.
+- Sorting defaults to `occurredAt` and `createdAt` descending if not specified.
 
 ### 3. Get All Records (Viewer)
 
