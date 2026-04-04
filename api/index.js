@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-
 import config from "../src/config/env.js";
 import routes from "../src/routes/index.js";
 import {
@@ -16,8 +15,12 @@ import { connectDatabase } from "../src/config/database.js";
 
 const app = express();
 
-// Simple health check endpoint for deployment troubleshooting
 app.get("/api/v1/ping", (_req, res) => res.json({ message: "pong" }));
+app.get("/", (_req, res) => {
+  res.send(
+    "Welcome to the fintech backend assignment for Zorvyn by Manu Keshrawani",
+  );
+});
 
 const allowedOrigins = config.corsAllowedOrigins;
 const corsOptions = allowedOrigins.length
